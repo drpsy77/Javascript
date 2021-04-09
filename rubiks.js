@@ -1,50 +1,14 @@
 
 /* Rubik's cube in a Navigator */
 
-//import * as THREE from '../../Threejs/three.module.js';
-/*
-let camera, scene, renderer;
-let geometry, material, mesh;
-
-init();
-
-function init() {
-
-	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 10 );
-	camera.position.z = 1;
-
-	scene = new THREE.Scene();
-
-	geometry = new THREE.BoxGeometry( 0.2, 0.2, 0.2 );
-	material = new THREE.MeshNormalMaterial();
-
-	mesh = new THREE.Mesh( geometry, material );
-	scene.add( mesh );
-
-	renderer = new THREE.WebGLRenderer( { antialias: true } );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.setAnimationLoop( animation );
-	document.body.appendChild( renderer.domElement );
-
-}
-
-function animation( time ) {
-
-	mesh.rotation.x = time / 2000;
-	mesh.rotation.y = time / 1000;
-
-	renderer.render( scene, camera );
-
-}
-
 /*
 ;Le cube est orienté de la manière suivante :
-;         3
-;      2  1  4  6
-;         5
+;         2
+;      1  0  3  5
+;         4
 */
 
-const color = [ "W" , "R" , "G" , "O" , "B" , "Y"  ]
+const couleur = [ "W" , "R" , "G" , "O" , "B" , "Y"  ]
 
 const dimn = 3
 
@@ -91,7 +55,6 @@ class Face {
 
     }
 
-       
     exchangeLC ( a , b ){
             let g =  this.c[a].slice()
             this.c[a] = this.l[b]
@@ -106,6 +69,7 @@ class Face {
         this.makeCols()
         this.log("Echange LL "+a+" "+b)
     }
+    
     exchangeCC ( a , b ){
         let g =  this.c[a].slice()
         this.c[a] =this.c[b]
@@ -124,22 +88,19 @@ class Face {
         }
     }
 
-
-    reverseL(){
-        for(var i = 0 ; i < dimn;i++){
-            this.l[i].reverse()
-        }
+    reverseL(i){
+        this.l[i].reverse()
         this.makeCols()
     }
-    reverseC(){
-        for(var i = 0 ; i < dimn;i++){
-            this.c[i].reverse()
-        }
+    reverseC(i){
+        this.c[i].reverse()
         this.makeLines()
     }
     turnRight(){
         this.transpose()
-        this.reverseL()
+        for(var i = 0 ; i < dimn;i++){
+            this.reverseL(i)
+        }
     }
     turnLeft(){
         this.transpose()
@@ -147,8 +108,21 @@ class Face {
     }
     
     turnTwice(){
-        this.reverseC()
-        this.reverseL()
+        var i=0
+        var tmp = this.l[0][0]
+        this.l[0][0] = this.l[2][2]
+        this.l[2][2] = tmp
+        i=2
+        tmp = this.l[0][2]
+        this.l[0][2] = this.l[2][0]
+        this.l[2][0] = tmp
+        tmp = this.l[1][0]
+        this.l[1][0] = this.l[1][2]
+        this.l[1][2] = tmp
+        tmp = this.l[0][1]
+        this.l[0][1] = this.l[2][1]
+        this.l[2][1] = tmp
+        this.makeCols()
     }
     changeColor(c){
         for(var i = 0 ; i < dimn;i++){
@@ -158,21 +132,24 @@ class Face {
             }
         }
     }
-    
 }
-
 
 
 class Cube{
     constructor(){
         this.faces = []
         for(var i=0;i<6;i++){
-            this.faces[i] = new Face(color[i])
+            this.faces[i] = new Face(couleur[i])
         }
         this.affiche()
     }
 
-
+    reinit(){
+        for(var i=0;i<6;i++){
+            this.faces[i] = new Face(couleur[i])
+        }
+        this.affiche()
+    }
 
 /*
 ;Le cube est orienté de la manière suivante :
@@ -183,14 +160,13 @@ class Cube{
 ; m pour tourner le milieu
 */
 
-
     r(){
         this.faces[0].turnRight()
-        this.faces[1].c[2].reverse()
+        this.faces[1].reverseC(2)
         let tmp = this.faces[1].c[2].slice()
         this.faces[1].c[2] = this.faces[4].l[0]
         this.faces[1].makeLines()
-        this.faces[3].c[0].reverse()
+        this.faces[3].reverseC(0)
         this.faces[4].l[0] = this.faces[3].c[0]
         this.faces[0].makeCols()
         this.faces[3].c[0] =  this.faces[2].l[2]
@@ -200,11 +176,10 @@ class Cube{
         this.affiche()
     }
 
-
     l(){ 
-        this.rrot() 
-        this.rrot() 
-        this.rrot()
+        this.r() 
+        this.r() 
+        this.r()
         
 /*        this.faces/1/turnRight
         reverse this.faces/2/c/3
@@ -216,9 +191,10 @@ class Cube{
         this.faces/3/l/3: tmp         this.faces/3/makeCols */
     }
 
-    m  (){}
+    m (){}
 
     y (){
+        this.faces[2].log("DEBUT DE y()")
         let tmp =  this.faces[0]
         this.faces[0] =  this.faces[4]
         this.faces[5].turnTwice()
@@ -230,7 +206,6 @@ class Cube{
         this.faces[3].turnRight()
         this.affiche()
     }
-
 
     z (){
         let tmp= this.faces[0]
@@ -245,7 +220,6 @@ class Cube{
 
     x (){
         let tmp = this.faces[1]
-        document.write("rx")
         tmp.transpose()
         tmp.exchangeLL( 0, 2)
         this.faces[2].transpose()
@@ -264,163 +238,333 @@ class Cube{
     }
 
 /**/
-    affiche(){
-        let out = "<font face=\"Courrier\"><textarea STYLE=\"border-style: none;\" cols=80 rows=12>"
-        for(var i=0;i<dimn;i++){ 
-            out = out +  "           " + this.faces[2].l[i] + "\n"
-        }
-        out=out+"\n"
+    affiche(){ 
+        let out = "" //"<font face=\"Courrier\"><textarea STYLE=\"border-style: none;\" cols=80 rows=12>"
+        
+        out = out +  "           " + this.faces[2].l[0] + "\n"
+        out = out +  "        2  " + this.faces[2].l[1] + "\n"
+        out = out +  "           " + this.faces[2].l[2] + "\n"
+        out=out+"     1       0       3       5\n"
         for(var i=0;i<dimn;i++){ 
             out = out +  "   " + this.faces[1].l[i] + "   " + this.faces[0].l[i] + "   " + this.faces[3].l[i] + "   " + this.faces[5].l[i] + "\n"
         }
         out=out+"\n"
         
-        for(var i=0;i<dimn;i++){ 
-            out = out +   "           "  + this.faces[4].l[i] + "\n"
-        }
-        out = out + "</textarea></font>"
-        document.open()
+        out = out +   "           "  + this.faces[4].l[0] + "\n"
+        out = out +   "        4  "  + this.faces[4].l[1] + "\n"
+        out = out +   "           "  + this.faces[4].l[2] + "\n"
+//        out = out + "</textarea></font>"
+        console.log(out)
+        /*document.open()
         document.write("<p>"+out+"</p>")
         document.close()
-        }
+        */ 
+    }
   
 }
 
 monCube = new Cube()
-with(monCube){
-r()
-z()
-r()
-y()
-r()
-z()
-r()
-}
 
 /*
+with(monCube){
+    r()
+    z()
+    r()
+    y()
+    r()
+    z()
+    r()
+}
+*/
 
-print "Début"
-#include %rubiks.red
+/***-------------------------***
+ *     Partie Graphique        *
+ ***-------------------------***/
 
-print "Import fichier réussi"
-
-origin: 400x160                
-
-xax: -10x6      yax: 10x6      zax: 0x12
-
-size: 4
-
-col: [
-    R red
-    G green
-    B blue
-    W white
-    O orange
-    Y yellow
-]
-
-produit: function [a [block!] b [block!]][
-    c: copy [0 0 0]
-    repeat i length? a [c/:i: (a/:i * b/:i)]
-    return c
-]
-
-
-somme: function [a [block!] b [block!]][
-    c: copy [0 0 0]
-    repeat i length? a [c/:i: (a/:i + b/:i)]
-    return c
-]
-
-project: function [ coord [series!] ][
-    ret: 0x0
-    ret/x: size * ((coord/1 * xax/1) + (coord/2 * yax/1) + (coord/3 * zax/1)) + origin/x
-    ret/y: size * ((coord/1 * xax/2) + (coord/2 * yax/2) + (coord/3 * zax/2)) + origin/y
-    return ret
-]
-
-fact: [  [[0 0 0][0 1 0][0 1 1][0 0 1]]
-         [[0 0 0][1 0 0][1 0 1][0 0 1]]
-         [[0 0 0][1 0 0][1 1 0][0 1 0]]
+const fact= [  [[0, 0, 0],[0, 1, 0],[0, 1, 1],[0, 0, 1]],
+               [[0, 0, 0],[1, 0, 0],[1, 0, 1],[0, 0, 1]],
+               [[0, 0, 0],[1, 0, 0],[1, 1, 0],[0, 1, 0]]
 ]   
 
-;;; cube: [ 2 1 3 6 4 5]
+// cube: [ 2 1 3 6 4 5]
 
-buf: [ line-width 3 pen gray]
-drawcube: function [][
-    repeat i 3 [
-        repeat j 3 [
-            pos:   compose [3 (i - 1) (j - 1)]
-            append buf compose/deep [ shape [ 
-                                        fill-pen  ( select col ( this.faces/2/l/:j/:i )) 
-                                        move  ((project (somme (fact/1/1) pos ) ))
-                                        line  ((project (somme (fact/1/1) pos ) ))
-                                              ((project (somme (fact/1/2) pos ) ))
-                                              ((project (somme (fact/1/3) pos ) ))
-                                              ((project (somme (fact/1/4) pos ) ))
-                                        ]]
-                                        
-            pos:   compose[(3 - i) 3 (j - 1)]
-            
-            append buf compose/deep [ shape [ 
-                                        fill-pen  ( select col ( this.faces/1/l/:j/:i )) 
-                                        move  ((project (somme (fact/2/1) pos ) )) 
-                                        line  ((project (somme (fact/2/1) pos ) )) 
-                                              ((project (somme (fact/2/2) pos ) )) 
-                                              ((project (somme (fact/2/3) pos ) )) 
-                                              ((project (somme (fact/2/4) pos ) )) 
-                                        ]]
-            
-            pos:   compose [(3  - i) (j - 1) 0]
-            
-            append buf compose/deep [ shape [ 
-                                        fill-pen  ( select col ( this.faces/3/l/:j/:i )) 
-                                        move  ((project (somme (fact/3/1) pos ) ))
-                                        line  ((project (somme (fact/3/1) pos ) ))
-                                              ((project (somme (fact/3/2) pos ) ))
-                                              ((project (somme (fact/3/3) pos ) ))
-                                              ((project (somme (fact/3/4) pos ) ))
-                                        ]]
+/*-----------------------------*
+ *        COULEURS             *
+ *-----------------------------*/
 
-            pos:   compose [(i - 1) -6 (j - 1)]
-            append buf compose/deep [ shape [ 
-                                        fill-pen  ( select col ( this.faces/6/l/:j/:i )) 
-                                        move  ((project (somme (fact/2/1) pos ) ))
-                                        line  ((project (somme (fact/2/1) pos ) ))
-                                              ((project (somme (fact/2/2) pos ) ))
-                                              ((project (somme (fact/2/3) pos ) ))
-                                              ((project (somme (fact/2/4) pos ) ))
-                                        ]]
-                                        
-            pos:   compose [-6 (3 - i) (j - 1)]            
-            append buf compose/deep [ shape [ 
-                                        fill-pen  ( select col ( this.faces/4/l/:j/:i )) 
-                                        move  ((project (somme (fact/1/1) pos ) ))
-                                        line  ((project (somme (fact/1/1) pos ) ))
-                                              ((project (somme (fact/1/2) pos ) ))
-                                              ((project (somme (fact/1/3) pos ) ))
-                                              ((project (somme (fact/1/4) pos ) ))
-                                        ]]
-            pos:   compose [(3 - i) (3 - j) 8]
-            
-            append buf compose/deep [ shape [ 
-                                        fill-pen  ( select col ( this.faces/5/l/:j/:i )) 
-                                        move  ((project (somme (fact/3/1) pos ) ))
-                                        line  ((project (somme (fact/3/1) pos ) ))
-                                              ((project (somme (fact/3/2) pos ) ))
-                                              ((project (somme (fact/3/3) pos ) ))
-                                              ((project (somme (fact/3/4) pos ) ))
-                                        ]]
-        ]  
-    ]
-]
+const red    = 0xff0000
+const green  = 0x00ff00
+const blue   = 0x0000ff
+const yellow = 0xffff00
+const cyan   = 0x00ffff
+const purple = 0xff00ff
+const black  = 0x000000
+const white  = 0xffffff
+const orange = 0xffaa00
 
-init-cube
+const couleurTab = { 
+    "R" : new Color( red ).getStyle(),
+    "W" : new Color( white ).getStyle(), 
+    "B" : new Color( blue ).getStyle(),
+    "Y" : new Color( yellow ).getStyle(),
+    "G" : new Color( green ).getStyle(), 
+    "O" : new Color( orange ).getStyle(),
+    "N" : new Color( black ).getStyle()
+}
 
-drawcube
 
-matthieu: false
+let camera, scene, renderer;
 
+let scene2, renderer2;
+
+let material;
+
+let controls;
+
+let drawnCube = [[[,,],[,,],[,,]],[[,,],[,,],[,,]],[[,,],[,,],[,,]],[[,,],[,,],[,,]],[[,,],[,,],[,,]],[[,,],[,,],[,,]]]
+
+
+matthieu = false
+
+init();
+drawcube();
+activate3D();
+animate();
+
+function init() {
+
+    camera = new PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 );
+    camera.position.set( 1000, 1000, 1000 );
+
+    scene = new Scene();
+    scene.background = new Color( 0xf0f0f0 );
+
+    scene2 = new Scene();
+
+    const material = new MeshBasicMaterial( { color: 0x000000, wireframe: true, wireframeLinewidth: 1, side: DoubleSide } );
+}
+    //
+
+function drawFacette(couleur, pos, ang, texte){
+//    console.log("Dessin de: " + couleur + " à "+ pos + " avec un angle de " + ang )
+    const element = document.createElement( 'div' );
+    element.style.width = '99px';
+    element.style.height = '99px';
+    element.style.opacity = 1;
+    element.style.background = couleur;
+    element.style.border = couleurTab["N"];
+    
+    const symbol = document.createElement( 'div' );
+    symbol.className = 'Text';
+    symbol.textContent = texte;
+    element.appendChild( symbol );
+
+    const object = new CSS3DObject( element );
+    object.position.x = ( pos[0] - 1 ) * 100 ;
+    object.position.y = ( pos[1] - 1 ) * 100 ;
+    object.position.z = ( pos[2] - 1 ) * 100 ;
+    object.rotation.x = ang[0];
+    object.rotation.y = ang[1];
+    object.rotation.z = ang[2];
+    object.scale.x = 1;
+    object.scale.y = 1;
+    scene2.add( object );
+
+    const geometry = new PlaneGeometry( 100, 100 );
+    const mesh = new Mesh( geometry, material );
+    mesh.position.copy( object.position );
+    mesh.rotation.copy( object.rotation );
+    mesh.scale.copy( object.scale );
+    scene.add( mesh );
+    return (scene2.children.length - 1);
+}
+
+
+             
+console.log(drawnCube)
+
+function drawcube(){
+    ang90 = Math.PI / 2;
+    console.log( "PI/2 = " + ang90 )
+    let numFace
+    for(var i = 0 ; i < dimn;i++){
+        for(var j = 0 ; j < dimn;j++){
+
+        //Face R
+            numFace = 1
+            pos = [2.5, j, (2-i)]
+            ang = [0, ang90, ang90 ]
+            drawnCube[numFace][i][j]=drawFacette(couleurTab [ monCube.faces[numFace].l[i][j] ], pos, ang, numFace + ":" + i + "." + j  )
+        
+        //Face W
+            numFace = 0
+            pos = [(2-j), 2.5, (2-i) ]
+            ang = [-ang90, 0 , 2*ang90]
+            drawnCube[numFace][i][j]=drawFacette(couleurTab [ monCube.faces[numFace].l[i][j] ], pos, ang, numFace + ":" + i + "." + j )
+
+        //Face G
+            numFace = 2
+            pos = [(2-j), i, 2.5]
+            ang = [ 0, 0, 2*ang90 ]
+            drawnCube[numFace][i][j]=drawFacette(couleurTab [ monCube.faces[numFace].l[i][j] ], pos, ang, numFace + ":" + i + "." + j )
+
+        //Face Y
+            numFace = 5
+            pos = [j , -0.5, (2-i) ]
+            ang = [ang90, 0, 0]
+            drawnCube[numFace][i][j]=drawFacette(couleurTab [ monCube.faces[numFace].l[i][j] ], pos, ang, numFace + ":" + i + "." + j )
+
+        //Face O
+            numFace = 3
+            pos = [-0.5, (2-j), (2-i) ]
+            ang = [0, -ang90, -ang90 ]
+            drawnCube[numFace][i][j]=drawFacette(couleurTab [ monCube.faces[numFace].l[i][j] ], pos, ang, numFace + ":" + i + "." + j )
+
+        //Face B
+            numFace = 4
+            pos = [(2-j), (2 - i), -0.5]
+            ang = [0, 2*ang90, 0 ]
+            drawnCube[numFace][i][j]=drawFacette(couleurTab [ monCube.faces[numFace].l[i][j] ], pos, ang, numFace + ":" + i + "." + j )
+       
+        }
+    }
+    //
+    
+}
+
+function activate3D(){
+    renderer = new WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+
+    renderer2 = new CSS3DRenderer();
+    renderer2.setSize( window.innerWidth, window.innerHeight );
+    renderer2.domElement.style.position = 'absolute';
+    renderer2.domElement.style.top = 0;
+    document.body.appendChild( renderer2.domElement );
+
+    controls = new TrackballControls( camera, renderer2.domElement );
+
+    window.addEventListener( 'resize', onWindowResize );
+	window.addEventListener( 'keyup' , onKeyUp );
+}
+
+
+function updateCube(){
+    out = ""
+    for(var numFace=0;numFace<6;numFace++){
+        for(var i = 0 ; i < dimn;i++){
+            for(var j = 0 ; j < dimn;j++){
+                
+                scene2.children[drawnCube[numFace][i][j]].element.style.background = couleurTab [ monCube.faces[numFace].l[i][j] ]
+            }                
+        }
+    }
+    console.log(out)
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer2.setSize( window.innerWidth, window.innerHeight );
+}
+
+function onKeyUp ( event ) {
+    console.log("Evénement Clavier : " + event.key )
+    //event.preventDefault();
+    if(matthieu){
+		switch ( event.key ) {
+
+            case " ":  monCube.r(); break;
+            case "#":  monCube.reinit(); break;
+            case "M": case "m":  {matthieu = ! matthieu;}; break;
+            case "u":  with(monCube) {y(); y(); y(); r(); y(); } break;
+            case "i":  with(monCube) {z(); r(); z(); z(); z(); } break;
+            case "t":  monCube.r() ; break;
+            case "j":  with(monCube) {y(); r(); y(); y(); l(); y(); z(); z(); z();} break;
+            case "O":  with(monCube) {z(); l(); z(); z(); r(); z(); y(); y(); y();} break;
+            case "R":  with(monCube) {l(); z(); z(); r(); z(); z(); x(); x(); x();} break;
+            case "?":  with(monCube) {y(); l(); y(); y(); y();} break;
+            case "P":  with(monCube) {z(); z(); z(); l(); z();} break;
+            case "E":  with(monCube) {z(); z(); l(); z(); z();} break;
+
+            case "U":  with(monCube) {y(); y(); y(); l(); y();} break;
+            case "I":  with(monCube) {z(); l(); z(); z(); z();} break;
+            case "T":  monCube.l();                             break;
+            case "J":  with(monCube) {y(); l(); y(); y(); r(); y(); z();} break;
+            case "o":  with(monCube) {z(); r(); z(); z(); l(); z(); y();} break;
+            case "r":  with(monCube) {r(); z(); z(); l(); z(); z(); x();} break;
+            case "M":  with(monCube) {y(); r(); y(); y(); y();}  break;
+            case "p":  with(monCube) {z(); z(); z(); r(); z();}  break;
+            case "e":  with(monCube) {z(); z(); r(); z(); z();}  break;
+
+            case "q":         break;          
+            case "X":  monCube.x(); break;
+            case "Y":  monCube.y(); break;
+            case "Z":  monCube.z(); break;
+            case "x":  with(monCube) {x(); x(); x ();} break;
+            case "y":  with(monCube) {y(); y(); y(); } break;
+            case "z":  with(monCube) {z(); z(); z(); } break;
+        }
+    } else 
+    {
+        switch (event.key) {
+            case " ":  monCube.r(); break;
+            case "#":  monCube.reinit(); break;
+            case "m":  {matthieu = ! matthieu;}; break;
+            case "U":  with(monCube) {y(); y(); y(); r(); y(); } break;
+            case "I":  with(monCube) {z(); r(); z(); z(); z(); } break;
+            case "T":  monCube.r() ;   break;
+            case "J":  with(monCube) {y(); r(); y(); y(); l(); y(); z(); z(); z();} break;
+            case "O":  with(monCube) {z(); l(); z(); z(); r(); z(); y(); y(); y();} break;
+            case "R":  with(monCube) {l(); z(); z(); r(); z(); z(); x(); x(); x();} break;
+            case "?":  with(monCube) {y(); l(); y(); y(); y();} break;
+            case "P":  with(monCube) {z(); z(); z(); l(); z();} break;
+            case "E":  with(monCube) {z(); z(); l(); z(); z();} break;
+
+            case "u":  with(monCube) {y(); y(); y(); l(); y();} break;
+            case "i":  with(monCube) {z(); l(); z(); z(); z();} break;
+            case "t":  monCube.l();    break;
+            case "j":  with(monCube) {y(); l(); y(); y(); r(); y(); z();} break;
+            case "o":  with(monCube) {z(); r(); z(); z(); l(); z(); y();} break;
+            case "r":  with(monCube) {r(); z(); z(); l(); z(); z(); x();} break;
+            case ",":  with(monCube) {y(); r(); y(); y(); y();} break;
+            case "p":  with(monCube) {z(); z(); z(); r(); z();} break;
+            case "e":  with(monCube) {z(); z(); r(); z(); z();} break;
+
+            case "q":  break;            
+            case "X":  monCube.x(); break;
+            case "Y":  monCube.y(); break;
+            case "Z":  monCube.z(); break;
+            case "x":  with(monCube) {x(); x(); x ();}  break;
+            case "y":  with(monCube) {y(); y(); y(); }  break;
+            case "z":  with(monCube) {z(); z(); z(); }  break;
+		}                                                      
+    }        
+    updateCube()
+  //  animate()
+}                                                              
+        
+
+function animate() {
+
+    requestAnimationFrame( animate );
+
+    controls.update();
+
+    renderer.render( scene, camera );
+    renderer2.render( scene2, camera );
+
+}
+
+
+
+
+
+
+/*
 view [
 ;    start-btn: button "Draw" [do-down]
 ;    return
